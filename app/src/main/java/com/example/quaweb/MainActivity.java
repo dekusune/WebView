@@ -7,10 +7,32 @@ import android.os.Bundle;
 import android.util.Log;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.widget.Button;
 import android.webkit.WebViewClient;
 import android.webkit.CookieManager;
+import android.webkit.WebView;
+import android.webkit.DownloadListener;
+import android.webkit.URLUtil;
 import android.widget.Toast;
 import java.net.URLEncoder;
+import android.app.Activity;
+import android.view.MenuItem;
+
+import android.Manifest;
+import android.app.DownloadManager;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
+
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 
 
@@ -24,7 +46,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         bagla();
         yukle();
-
         webView.setWebViewClient(new WebViewClient());
 
     }
@@ -76,7 +97,29 @@ public class MainActivity extends AppCompatActivity {
 
         // Activity'nin içine WebView'ı ekle (eğer bir Activity içinde kullanılıyorsa)
         setContentView(webView);
+        webView.setDownloadListener(new DownloadListener() {
+            @Override
+            public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimeType, long contentLength) {
+                DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+                request.setMimeType(mimeType);
+                String cookies = CookieManager.getInstance().getCookie(url);
+                request.addRequestHeader("cookie", cookies);
+                request.addRequestHeader("User-Agent", userAgent);
+                request.setDescription("Dosya İndiriliyor...");
+                request.setTitle(URLUtil.guessFileName(url, contentDisposition, mimeType));
+                request.allowScanningByMediaScanner();
+                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, URLUtil.guessFileName(url, contentDisposition, mimeType));
+                DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                dm.enqueue(request);
+                Toast.makeText(getApplicationContext(), "Dosya İndiriliyor", Toast.LENGTH_SHORT).show();
+
+            }
+        });
+
     }
+
+
     @Override
     public void onBackPressed() {
         // WebView içinde geri gitme işlemi
